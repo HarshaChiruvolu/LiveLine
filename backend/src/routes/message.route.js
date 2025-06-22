@@ -14,6 +14,6 @@ router.get("/users", protectRoute, getUsersForSidebar);
 router.get("/:id", protectRoute, getMessages);
 router.post("/send/:id", protectRoute, sendMessage);
 router.put("/pin/:id", protectRoute, pinMessage);
-router.put("/messages/:id/pin", protectRoute, togglePinMessage);
+router.put("/:id/pin", protectRoute, togglePinMessage);
 
 export default router;

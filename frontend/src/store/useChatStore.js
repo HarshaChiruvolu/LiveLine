@@ -83,16 +83,10 @@ export const useChatStore = create((set, get) => ({
       const res = await axiosInstance.put(`/messages/${messageId}/pin`);
       const updated = res.data.updated;
 
+      // Update the specific message in the array
       const updatedMessages = get().messages.map((msg) =>
-        msg._id === messageId ? updated : msg
+        msg._id === messageId ? { ...msg, pinned: updated.pinned } : msg
       );
-
-      // Optional: sort messages by pinned first
-      updatedMessages.sort((a, b) => {
-        if (a.pinned === b.pinned)
-          return new Date(a.createdAt) - new Date(b.createdAt);
-        return b.pinned - a.pinned; // pinned messages first
-      });
 
       set({ messages: updatedMessages });
     } catch (err) {
