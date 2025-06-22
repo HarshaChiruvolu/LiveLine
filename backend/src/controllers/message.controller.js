@@ -69,3 +69,34 @@ export const sendMessage = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+export const pinMessage = async (req, res) => {
+  try {
+    const { id } = req.params; // message ID
+    const updated = await Message.findByIdAndUpdate(
+      id,
+      { pinned: true },
+      { new: true }
+    );
+    res.json(updated);
+  } catch (err) {
+    console.error("Error in pinMessage:", err.message);
+    res.status(500).json({ message: "Failed to pin message" });
+  }
+};
+
+export const togglePinMessage = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const message = await Message.findById(id);
+    if (!message) return res.status(404).json({ message: "Message not found" });
+
+    message.pinned = !message.pinned;
+    await message.save();
+
+    res.json({ message: "Pin status updated", updated: message });
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+};

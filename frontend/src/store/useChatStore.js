@@ -61,7 +61,7 @@ export const useChatStore = create((set, get) => ({
     const socket = useAuthStore.getState().socket;
     socket.on("newMessage", (newMesage) => {
       const isMessageFromSelectedUser = newMesage.senderId === selectedUser._id;
-      if(!isMessageFromSelectedUser) return;
+      if (!isMessageFromSelectedUser) return;
 
       set({
         messages: [...get().messages, newMesage],
@@ -76,5 +76,28 @@ export const useChatStore = create((set, get) => ({
 
   setSelectedUser: (selectedUser) => {
     set({ selectedUser });
+  },
+
+  pinMessage: async (messageId) => {
+    try {
+      const res = await axiosInstance.put(`/messages/${messageId}/pin`);
+      const updated = res.data.updated;
+
+      const updatedMessages = get().messages.map((msg) =>
+        msg._id === messageId ? updated : msg
+      );
+
+      // Optional: sort messages by pinned first
+      updatedMessages.sort((a, b) => {
+        if (a.pinned === b.pinned)
+          return new Date(a.createdAt) - new Date(b.createdAt);
+        return b.pinned - a.pinned; // pinned messages first
+      });
+
+      set({ messages: updatedMessages });
+    } catch (err) {
+      console.error("Failed to pin message:", err);
+      toast.error("Failed to pin/unpin message");
+    }
   },
 }));

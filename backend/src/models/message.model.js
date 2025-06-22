@@ -19,6 +19,11 @@ const messageSchema = new mongoose.Schema(
     image: {
       type: String,
     },
+
+    pinned: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );
