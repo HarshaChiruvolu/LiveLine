@@ -17,7 +17,7 @@ const AuthImagePattern = ({ title, subtitle }) => {
         <p className="text-base-content/60">{subtitle}</p>
       </div>
 
-      <style jsx>{`
+      <style>{`
         @keyframes pulse {
           0%,
           100% {
