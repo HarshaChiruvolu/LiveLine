@@ -8,12 +8,15 @@ const MessageInput = () => {
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
   const fileInputRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
+  const isTypingRef = useRef(false);
+
   const { sendMessage, selectedUser } = useChatStore();
   const { authUser, socket } = useAuthStore();
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    if (!file.type.startsWith("image/")) {
+    if (!file?.type.startsWith("image/")) {
       toast.error("Please select an image file");
       return;
     }
@@ -39,34 +42,47 @@ const MessageInput = () => {
         text: text.trim(),
         image: imagePreview,
       });
+
       setText("");
       setImagePreview(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
-      // Immediately stop typing after message send
-      socket.emit("stopTyping", {
-        senderId: authUser._id,
-        receiverId: selectedUser._id,
-      });
+
+      // Immediately stop typing on send
+      if (isTypingRef.current) {
+        socket.emit("stopTyping", {
+          senderId: authUser._id,
+          receiverId: selectedUser._id,
+        });
+        isTypingRef.current = false;
+      }
+
+      clearTimeout(typingTimeoutRef.current);
     } catch (error) {
       console.error("Failed to send message:", error);
     }
   };
 
   const handleTyping = () => {
-    if (socket && selectedUser) {
+    if (!socket || !selectedUser) return;
+
+    // Send typing event once
+    if (!isTypingRef.current) {
       socket.emit("typing", {
         senderId: authUser._id,
         receiverId: selectedUser._id,
       });
-
-      clearTimeout(typingTimeout);
-      typingTimeout = setTimeout(() => {
-        socket.emit("stopTyping", {
-          senderId: authUser._id,
-          receiverId: selectedUser._id,
-        });
-      }, 1000); // Debounce duration
+      isTypingRef.current = true;
     }
+
+    // Reset debounce timer
+    clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => {
+      socket.emit("stopTyping", {
+        senderId: authUser._id,
+        receiverId: selectedUser._id,
+      });
+      isTypingRef.current = false;
+    }, 1500); // debounce delay
   };
 
   return (
