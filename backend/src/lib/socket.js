@@ -11,7 +11,7 @@ const io = new Server(server, {
   },
 });
 
-export function getReceiverSocketId(userId){
+export function getReceiverSocketId(userId) {
   return userSocketMap[userId];
 }
 
@@ -24,6 +24,21 @@ io.on("connection", (socket) => {
 
   //io.emit() is used to send a message to all connected clients basically broadcasting
   io.emit("getOnlineUsers", Object.keys(userSocketMap));
+
+  // ✅ Typing indicator events
+  socket.on("typing", ({ senderId, receiverId }) => {
+    const receiverSocketId = userSocketMap[receiverId];
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("typing", { senderId });
+    }
+  });
+
+  socket.on("stopTyping", ({ senderId, receiverId }) => {
+    const receiverSocketId = userSocketMap[receiverId];
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("stopTyping", { senderId });
+    }
+  });
 
   socket.on("disconnect", () => {
     console.log("User disconnected", socket.id);

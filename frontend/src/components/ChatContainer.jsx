@@ -19,24 +19,34 @@ const ChatContainer = () => {
     pinMessage,
   } = useChatStore();
 
-  const { authUser } = useAuthStore();
+  const { authUser, socket } = useAuthStore();
   const messageEndRef = useRef(null);
   const [showPinned, setShowPinned] = useState(true);
+  const [typingUserId, setTypingUserId] = useState(null);
 
   useEffect(() => {
     getMessages(selectedUser._id);
     subscribeToMessages();
     return () => unsubscribeFromMessages();
-  }, [
-    selectedUser._id,
-    getMessages,
-    subscribeToMessages,
-    unsubscribeFromMessages,
-  ]);
+  }, [selectedUser._id]);
 
   useEffect(() => {
     messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  useEffect(() => {
+    if (!socket) return;
+    socket.on("typing", ({ senderId }) => {
+      if (senderId === selectedUser._id) {
+        setTypingUserId(senderId);
+        setTimeout(() => setTypingUserId(null), 3000); // clear after 3 seconds
+      }
+    });
+
+    return () => {
+      socket.off("typing");
+    };
+  }, [socket, selectedUser._id]);
 
   if (isMessagesLoading)
     return (
@@ -48,13 +58,11 @@ const ChatContainer = () => {
     );
 
   const pinnedMessages = messages.filter((msg) => msg.pinned);
-  const unpinnedMessages = messages; // full messages list (don't exclude pinned here)
 
   return (
     <div className="flex-1 flex flex-col overflow-auto">
       <ChatHeader />
 
-      {/* Toggle Pinned Section */}
       {pinnedMessages.length > 0 && (
         <div className="p-2 border-b border-base-300 flex items-center justify-between">
           <h4 className="text-sm font-semibold text-yellow-500">
@@ -69,7 +77,6 @@ const ChatContainer = () => {
         </div>
       )}
 
-      {/* Pinned Section */}
       {showPinned && pinnedMessages.length > 0 && (
         <div className="bg-base-200 p-3 space-y-4">
           {pinnedMessages.map((msg) => (
@@ -93,9 +100,8 @@ const ChatContainer = () => {
         </div>
       )}
 
-      {/* Message List */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {unpinnedMessages.map((message) => {
+        {messages.map((message) => {
           const isOwnMessage = message.senderId === authUser._id;
 
           return (
@@ -116,7 +122,6 @@ const ChatContainer = () => {
                 </div>
               </div>
 
-              {/* Header */}
               <div className="chat-header mb-1 flex items-center gap-2">
                 <time className="text-xs opacity-50">
                   {formatMessageTime(message.createdAt)}
@@ -141,7 +146,6 @@ const ChatContainer = () => {
                 </motion.button>
               </div>
 
-              {/* Chat Bubble */}
               <div className="chat-bubble flex flex-col">
                 {message.image && (
                   <img
@@ -161,6 +165,23 @@ const ChatContainer = () => {
         })}
         <div ref={messageEndRef} />
       </div>
+
+      {typingUserId === selectedUser._id && (
+        <div className="px-4 pb-2 flex gap-2 items-center">
+          <div className="w-8 h-8 rounded-full bg-base-300 flex items-center justify-center">
+            <img
+              src={selectedUser.profilePic || "/avatar.png"}
+              alt="typing avatar"
+              className="w-6 h-6 rounded-full"
+            />
+          </div>
+          <div className="typing-indicator flex items-center gap-1">
+            <span className="dot bg-zinc-400"></span>
+            <span className="dot bg-zinc-400"></span>
+            <span className="dot bg-zinc-400"></span>
+          </div>
+        </div>
+      )}
 
       <MessageInput />
     </div>
