@@ -6,6 +6,8 @@
   width: 8px;
   height: 8px;
   border-radius: 9999px;
+  background-color: #6b7280; /* Tailwind's gray-500 */
+  box-shadow: 0 0 4px rgba(107, 114, 128, 0.6); /* soft glow */
   animation: bounce 1.4s infinite ease-in-out both;
 }
 

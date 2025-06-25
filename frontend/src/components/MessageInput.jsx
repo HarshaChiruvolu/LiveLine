@@ -42,6 +42,11 @@ const MessageInput = () => {
       setText("");
       setImagePreview(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
+      // Immediately stop typing after message send
+      socket.emit("stopTyping", {
+        senderId: authUser._id,
+        receiverId: selectedUser._id,
+      });
     } catch (error) {
       console.error("Failed to send message:", error);
     }
@@ -53,6 +58,14 @@ const MessageInput = () => {
         senderId: authUser._id,
         receiverId: selectedUser._id,
       });
+
+      clearTimeout(typingTimeout);
+      typingTimeout = setTimeout(() => {
+        socket.emit("stopTyping", {
+          senderId: authUser._id,
+          receiverId: selectedUser._id,
+        });
+      }, 1000); // Debounce duration
     }
   };
 
